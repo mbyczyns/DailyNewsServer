@@ -10,8 +10,19 @@ with open("nyt_apikey.txt", "r") as f:
 with open("news_apikey.txt", "r") as f:
     news_apikey = f.read()
 
-def list_snippets(response):
-    pass
+def list_snippets(r):
+    snippets=[]
+    for i in r['response']['docs']:
+        title = i['headline']['main']
+        headline = i['headline']['print_headline']
+        pub_date = i['pub_date']
+        keywords = []
+        for j in i['keywords']:
+            keywords.append(j['value'])
+        main_image_url = "https://static01.nyt.com/" + str(i['multimedia'][0]['url'])
+        web_url = i['web_url']
+        snippets.append(Article_snippet(title=title, headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
+    return snippets
 
 @app.route("/text")
 def proxy_text():
