@@ -19,9 +19,10 @@ def list_snippets(r):
         keywords = []
         for j in i['keywords']:
             keywords.append(j['value'])
-        main_image_url = "https://static01.nyt.com/" + str(i['multimedia'][0]['url'])
+        # main_image_url = i['multimedia'][0]['url']
+        main_image_url = "abcabc"
         web_url = i['web_url']
-        snippets.append(Article_snippet(title=title, headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
+        snippets.append(Article_snippet(title=title, print_headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
     return snippets
 
 @app.route("/text")
@@ -41,9 +42,8 @@ def proxy_parser():
     query = request.args.get("q", "")
     r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq={query}&api-key={nyt_apikey}")
     r=r.json()
-    title1 = str(r['response']['docs'][0]['headline']['main'])
-    return title1
-
+    snippets = list_snippets(r)
+    return snippets[0]
 
 if __name__ == "__main__":
     app.run(debug=True)
