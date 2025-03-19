@@ -6,6 +6,16 @@ class Article_snippet:
         self.print_headline = print_headline
         self.web_url = web_url
         self.keywords = keywords
+
+    def to_dict(self):
+        return {
+            "title": self.title,
+            "print_headline": self.print_headline,
+            "pub_date": self.pub_date,
+            "keywords": self.keywords,
+            "main_image_url": self.main_image_url,
+            "web_url": self.web_url
+        }
     
     
 

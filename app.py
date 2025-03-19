@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 from classes import Article_snippet
 import json
+from datetime import datetime
 
 
 app = Flask(__name__)
@@ -10,18 +11,27 @@ with open("nyt_apikey.txt", "r") as f:
 with open("news_apikey.txt", "r") as f:
     news_apikey = f.read()
 
+def extract_date(rawdate):
+    dt = datetime.strptime(rawdate, "%Y-%m-%dT%H:%M:%S%z")
+    return dt.strftime("%Y-%m-%d")
+
 def list_snippets(r):
     snippets=[]
     for i in r['response']['docs']:
         title = i['headline']['main']
         headline = i['headline']['print_headline']
-        pub_date = i['pub_date']
+        pub_date = extract_date(i['pub_date'])
         keywords = []
         for j in i['keywords']:
             keywords.append(j['value'])
-        # main_image_url = i['multimedia'][0]['url']
-        main_image_url = "abcabc"
+        images=[]
+        for j in i['multimedia']:
+            images.append(j['url'])
+        if len(images)>0:
+            main_image_url = "https://static01.nyt.com/" + images[0]
+        else: main_image_url=''
         web_url = i['web_url']
+
         snippets.append(Article_snippet(title=title, print_headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
     return snippets
 
@@ -43,7 +53,7 @@ def proxy_parser():
     r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq={query}&api-key={nyt_apikey}")
     r=r.json()
     snippets = list_snippets(r)
-    return snippets[0]
+    return jsonify([article.to_dict() for article in snippets])
 
 if __name__ == "__main__":
     app.run(debug=True)
