@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
 from classes import Article_snippet
-import json
 from datetime import datetime
 
 
@@ -56,4 +55,4 @@ def proxy_parser():
     return jsonify([article.to_dict() for article in snippets])
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
