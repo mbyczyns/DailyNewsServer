@@ -30,25 +30,28 @@ def list_snippets(r):
         snippets.append(Article_snippet(title=title, print_headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
     return snippets
 
-@app.route("/text")
-def proxy_text():
-    query = request.args.get("q", "")
-    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq={query}&api-key={nyt_apikey}")
-    return r.text
-
 @app.route("/json")
 def proxy_json():
     query = request.args.get("q", "")
     r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?q={query}&api-key={nyt_apikey}")
     return r.json()
 
-@app.route("/parse")
-def proxy_parser():
+@app.route("/search")
+def search_endpoint():
     query = request.args.get("q", "")
     r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?q={query}&api-key={nyt_apikey}")
     r=r.json()
     snippets = list_snippets(r)
     return jsonify([article.to_dict() for article in snippets])
+
+@app.route("/categories")
+def categories_endpoint():
+    query = request.args.get("fq", "")
+    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq={query}&api-key={nyt_apikey}")
+    r=r.json()
+    snippets = list_snippets(r)
+    return jsonify([article.to_dict() for article in snippets])
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
