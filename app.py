@@ -23,12 +23,8 @@ def list_snippets(r):
         keywords = []
         for j in i['keywords']:
             keywords.append(j['value'])
-        images=[]
-        for j in i['multimedia']:
-            images.append(j['url'])
-        if len(images)>0:
-            main_image_url = "https://static01.nyt.com/" + images[0]
-        else: main_image_url=''
+        image_url = i['multimedia']['default']['url']
+        main_image_url = "https://static01.nyt.com/" + image_url
         web_url = i['web_url']
 
         snippets.append(Article_snippet(title=title, print_headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
@@ -43,13 +39,13 @@ def proxy_text():
 @app.route("/json")
 def proxy_json():
     query = request.args.get("q", "")
-    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq={query}&api-key={nyt_apikey}")
+    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?q={query}&api-key={nyt_apikey}")
     return r.json()
 
 @app.route("/parse")
 def proxy_parser():
     query = request.args.get("q", "")
-    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq={query}&api-key={nyt_apikey}")
+    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?q={query}&api-key={nyt_apikey}")
     r=r.json()
     snippets = list_snippets(r)
     return jsonify([article.to_dict() for article in snippets])
