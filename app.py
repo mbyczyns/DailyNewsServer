@@ -47,9 +47,10 @@ def search_endpoint():
 @app.route("/categories")
 def categories_endpoint():
     query = request.args.get("fq", "")
-    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq={query}&api-key={nyt_apikey}")
+    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=desk:(\"{query}\")&api-key={nyt_apikey}")
     r=r.json()
     snippets = list_snippets(r)
+    print(query)
     return jsonify([article.to_dict() for article in snippets])
 
 
