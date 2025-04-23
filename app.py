@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
-from classes import Article_snippet
+from classes import Article_snippet, sections, desks
 from datetime import datetime
 
 
@@ -24,7 +24,7 @@ def list_snippets(r):
         for j in i['keywords']:
             keywords.append(j['value'])
         image_url = i['multimedia']['default']['url']
-        main_image_url = "https://static01.nyt.com/" + image_url
+        main_image_url = image_url
         web_url = i['web_url']
 
         snippets.append(Article_snippet(title=title, print_headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
@@ -47,7 +47,10 @@ def search_endpoint():
 @app.route("/categories")
 def categories_endpoint():
     query = request.args.get("fq", "")
-    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=desk:(\"{query}\")&api-key={nyt_apikey}")
+    if query in sections:
+        r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=section.name:(\"{query}\")&api-key={nyt_apikey}")
+    else:
+        r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=desk:(\"{query}\")&api-key={nyt_apikey}")
     r=r.json()
     snippets = list_snippets(r)
     print(query)
