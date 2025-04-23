@@ -15,19 +15,30 @@ def extract_date(rawdate):
     return dt.strftime("%Y-%m-%d")
 
 def list_snippets(r):
-    snippets=[]
+    snippets = []
     for i in r['response']['docs']:
         title = i['headline']['main']
-        headline = i['headline']['print_headline']
+        headline = i['headline'].get('print_headline', "")  # dodaj `get()` na wypadek braku klucza
         pub_date = extract_date(i['pub_date'])
-        keywords = []
-        for j in i['keywords']:
-            keywords.append(j['value'])
+        keywords = [j['value'] for j in i['keywords']]
         image_url = i['multimedia']['default']['url']
         main_image_url = image_url
         web_url = i['web_url']
 
-        snippets.append(Article_snippet(title=title, print_headline=headline, pub_date=pub_date, keywords=keywords, main_image_url=main_image_url, web_url=web_url))
+        snippets.append(
+            Article_snippet(
+                title=title,
+                print_headline=headline,
+                pub_date=pub_date,
+                keywords=keywords,
+                main_image_url=main_image_url,
+                web_url=web_url
+            )
+        )
+
+    # Sortuj po dacie od najnowszej do najstarszej
+    snippets.sort(key=lambda x: datetime.strptime(x.pub_date, "%Y-%m-%d"), reverse=True)
+
     return snippets
 
 @app.route("/json")
