@@ -41,30 +41,17 @@ def list_snippets(r):
 
     return snippets
 
-@app.route("/json")
-def proxy_json():
-    query = request.args.get("q", "")
-    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?q={query}&api-key={nyt_apikey}")
-    return r.json()
-
-@app.route("/search")
-def search_endpoint():
-    query = request.args.get("q", "")
-    r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?q={query}&api-key={nyt_apikey}")
-    r=r.json()
-    snippets = list_snippets(r)
-    return jsonify([article.to_dict() for article in snippets])
-
 @app.route("/categories")
 def categories_endpoint():
     query = request.args.get("fq", "")
     if query in sections:
         r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=section.name:(\"{query}\")&api-key={nyt_apikey}")
-    else:
+    elif query in desks:
         r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?fq=desk:(\"{query}\")&api-key={nyt_apikey}")
+    else:
+           r = requests.get(f"https://api.nytimes.com/svc/search/v2/articlesearch.json?q={query}&api-key={nyt_apikey}") 
     r=r.json()
     snippets = list_snippets(r)
-    print(query)
     return jsonify([article.to_dict() for article in snippets])
 
 
