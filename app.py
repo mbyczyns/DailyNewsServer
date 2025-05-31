@@ -87,6 +87,15 @@ def readarticle(): # zapisuje artykuł do bazy danych jako przeczytany (watched)
         cursor.execute(f"INSERT into keywords (keyword, article_title) values ('{keyword}','{article.title}')")
     
 
+@app.route("/likearticle")
+def likearticle(): # zapisuje artykuł do bazy danych jako przeczytany (watched)
+    searched_url = request.args.get("fq", "")
+    article = get_article(global_snippets,searched_url)
+    cursor.execute(f"INSERT into articles (title, action, web_url, pub_date, print_headline, main_image_url) values ('{article.title}', 'liked', '{article.web_url}', '{article.pub_date}', '{article.print_headline}', '{article.main_image_url}')")
+    for keyword in article.keywords:
+        cursor.execute(f"INSERT into keywords (keyword, article_title) values ('{keyword}','{article.title}')")
+    
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
     global_snippets = []
