@@ -20,3 +20,4 @@ class Article_snippet:
     
 sections =["Health", "Sports", "Books", "Arts", "Fashion"]
 desks =["Business","Science", "Politics", "Weather", "Travel"]
+
