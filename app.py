@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 import requests
-from classes import Article_snippet, sections, desks
+from classes import sections, desks
+from manage_articles import list_snippets, print_snippets, get_article
 from datetime import datetime
 import sqlite3
 
+DATABASE = "./database/database_file.db"
 
 app = Flask(__name__)
 with open("nyt_apikey.txt", "r") as f:
@@ -11,54 +13,17 @@ with open("nyt_apikey.txt", "r") as f:
 with open("news_apikey.txt", "r") as f:
     news_apikey = f.read()
 
-def extract_date(rawdate):
-    dt = datetime.strptime(rawdate, "%Y-%m-%dT%H:%M:%S%z")
-    return dt.strftime("%Y-%m-%d")
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row  # opcjonalnie: zwracaj jako dict
+    return g.db
 
-
-def get_article(snippets, searched_url):
-    for snpt in snippets:
-        if hasattr(snpt, 'web_url'):
-            if getattr(snpt, 'web_url') == searched_url:
-                return snpt
-    return None
-    
-
-def list_snippets(r):
-    snippets = []
-    for i in r['response']['docs']:
-        title = i['headline']['main']
-        headline = i['headline'].get('print_headline', "") 
-        pub_date = extract_date(i['pub_date'])
-        keywords = [j['value'] for j in i['keywords']]
-        image_url = i['multimedia']['default']['url']
-        main_image_url = image_url
-        web_url = i['web_url']
-
-        snippets.append(
-            Article_snippet(
-                title=title,
-                print_headline=headline,
-                pub_date=pub_date,
-                keywords=keywords,
-                main_image_url=main_image_url,
-                web_url=web_url
-            )
-        )
-
-    snippets.sort(key=lambda x: datetime.strptime(x.pub_date, "%Y-%m-%d"), reverse=True)
-    return snippets
-
-
-def print_snippets(list_snippets):
-    for snippet in list_snippets:
-        print("      "+snippet.title)
-        print(snippet.print_headline)
-        print(snippet.pub_date)
-        print(snippet.keywords)
-        print(snippet.main_image_url)
-        print(snippet.web_url)
-        print("- - - - - - - - -")
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
 
 
 @app.route("/search")
@@ -81,6 +46,8 @@ def categories_endpoint():
 @app.route("/readarticle")
 def readarticle(): # zapisuje artykuł do bazy danych jako przeczytany (watched)
     searched_url = request.args.get("fq", "")
+    db= get_db()
+    cursor = db.cursor()
     article = get_article(global_snippets,searched_url)
     cursor.execute(f"INSERT into articles (title, action, web_url, pub_date, print_headline, main_image_url) values ('{article.title}', 'watched', '{article.web_url}', '{article.pub_date}', '{article.print_headline}', '{article.main_image_url}')")
     for keyword in article.keywords:
@@ -90,14 +57,24 @@ def readarticle(): # zapisuje artykuł do bazy danych jako przeczytany (watched)
 @app.route("/likearticle")
 def likearticle(): # zapisuje artykuł do bazy danych jako przeczytany (watched)
     searched_url = request.args.get("fq", "")
+    db= get_db()
+    cursor = db.cursor()
     article = get_article(global_snippets,searched_url)
     cursor.execute(f"INSERT into articles (title, action, web_url, pub_date, print_headline, main_image_url) values ('{article.title}', 'liked', '{article.web_url}', '{article.pub_date}', '{article.print_headline}', '{article.main_image_url}')")
     for keyword in article.keywords:
         cursor.execute(f"INSERT into keywords (keyword, article_title) values ('{keyword}','{article.title}')")
     
 
+
+@app.route("/database")
+def test_database():
+    db= get_db()
+    cursor = db.cursor()
+    cursor.execute("select * from articles")
+    rows = cursor.fetchall()
+    return jsonify([dict(row) for row in rows]) 
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5555)
     global_snippets = []
-    conn = sqlite3.connect("./database/database_file.db")
-    cursor = conn.cursor()
+    
